@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<!-- ハンズオン全体の構成図（README の「構築するアーキテクチャ」、記事の「ハンズオンはこちら！」）。DESIGN 6-7。
+     左: あなたが AWS CloudShell で実行するコマンド。右: 東京リージョンで使う AWS のリソース。線の上の「手順 N」は README の手順の番号。
+     左の箱は、線でつなぐ AWS のリソースと同じ高さに置く。そのため上から手順の順には並ばない。
+     根拠:
+     - 手順 1: bash setup.sh が CloudWatch Logs のロググループ /aws/events/aws-deepcuts-flexmatch（保持期間 7 日）と
+       リソースポリシー aws-deepcuts-flexmatch-events を作成する（hands-on/setup.sh。README 手順 1）
+     - 手順 2: aws events put-rule・put-targets で EventBridge のルールと送り先を作成する（hands-on/event-pattern.json。gl-088）
+     - 手順 3〜8: aws gamelift の validate-matchmaking-rule-set・create-matchmaking-rule-set・create-matchmaking-configuration・
+       start-matchmaking・stop-matchmaking・describe-matchmaking・update-matchmaking-configuration（botocore gamelift 2015-10-01）
+     - 手順 5〜8: bash apply-round.sh が 24 人を 1 人ずつ start-matchmaking で申し込む（hands-on/apply-round.sh）
+     - 手順 4〜8: python3 teams.py と aws logs filter-log-events がロググループのイベントを読む（hands-on/teams.py。README 手順 4-4）
+     - ルールセットは r1・r2・r3・r5・r6 の 5 つ（ラウンド 4 は r3 のまま。hands-on/rulesets/）。マッチメイキング設定は STANDALONE（gl-056）
+     - イベントは既定のイベントバスに届き、EventBridge のルールがロググループに書き込む（gl-088）
+     - IAM ロールは作成しないため描かない（README の冒頭）
+     横幅の内訳（x は #fig の左端から）:
+     - 全体: 余白 24 ＋ CloudShell の枠 232（24〜256）＋ 24 ＋ AWS Cloud の枠 496（280〜776）＋ 余白 24 ＝ 800
+     - CloudShell の枠の中: 枠の内側 24 ＋ 箱 184（48〜232）＋ 枠の内側 24
+     - AWS Cloud の枠の中: 枠の内側 24 ＋ リージョンの枠 448（304〜752）＋ 枠の内側 24
+     - リージョンの枠の中: 枠の内側 24 ＋ 線のラベルの列 120（328〜448）＋ AWS のリソースの列 280（448〜728）＋ 枠の内側 24
+     - GameLift Servers の枠 448〜728。中の箱 232（472〜704）。EventBridge と CloudWatch Logs の中心 x=588
+     縦の内訳: AWS Cloud の枠 24〜936（見出し 24〜56）、リージョンの枠 88〜912（見出し 88〜120）、GameLift Servers の枠 144〜450
+     （見出し 144〜176、箱 200〜426）、Amazon EventBridge 520〜約 650、CloudWatch Logs 712〜888、下の余白 24。
+     ルールセットの箱は 200〜286 で、「ラウンド 4 は r3 を使う」の行を含む。
+     左の箱の中心の高さ: 294（GameLift Servers の枠の左の辺）、404（チケット）、548（EventBridge のアイコン）、746・856（CloudWatch Logs）。
+     線はすべて水平か垂直で、交わらない。強調: GameLift Servers → EventBridge → CloudWatch Logs のイベントの経路 -->
+<link rel="stylesheet" href="diagram.css">
+<link rel="stylesheet" href="deepcuts.css">
+<script src="wires.js"></script>
+<style>
+  #fig { width: 800px; height: 960px; }
+
+  /* 左: あなたの操作（灰色の点線） */
+  .lane > .lt { display: flex; align-items: center; gap: 8px; white-space: nowrap; top: 10px; }
+  .lane > .lt img { width: 32px; height: 32px; }
+  .tx { position: absolute; font-size: 16px; font-weight: 500; line-height: 23px; white-space: nowrap; color: #4a4843; }
+  .port { position: absolute; left: 48px; width: 184px; border: 2px solid var(--ink); background: #fff; padding: 7px 10px; }
+  .port b { display: block; font-size: 17px; font-weight: 900; line-height: 23px; white-space: nowrap; }
+  .port code { display: block; font-family: var(--font-mono); font-weight: 800; font-size: 15px; line-height: 22px; white-space: nowrap; margin-top: 2px; }
+  .port code + code { margin-top: 0; }
+
+  /* 右: AWS の枠 */
+  .grp { position: absolute; border: 2px solid #242f3e; }
+  .grp.region { border: 2px dashed #00a4a6; }
+  .grp.svc { border: 2px solid var(--ink); }
+  .grp > .gl { position: absolute; left: -2px; top: -2px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .grp > .gl img { width: 32px; height: 32px; }
+  /* 枠の名前はコードではないため、図の文字の下限の 16px にする */
+  .grp > .gl .en { font-family: var(--font-mono); font-weight: 800; font-size: 16px; letter-spacing: .04em; }
+  .grp.svc > .gl .en { letter-spacing: 0; }
+  .grp > .gl .ja { font-size: 16px; font-weight: 900; }
+  .grp > .gl .code { font-family: var(--font-mono); font-weight: 800; font-size: 15px; color: var(--grey); }
+
+  .bx { position: absolute; left: 472px; width: 232px; border: 2px solid var(--ink); background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .bx b { font-size: 18px; font-weight: 900; line-height: 1.3; }
+  .bx span { font-size: 16px; font-weight: 500; line-height: 1.4; }
+  .bx img { width: 40px; height: 40px; margin-bottom: 6px; }
+  .node.wide { width: 232px; }
+  .node .s { color: #4a4843; }
+  .lbl { color: var(--ink); font-weight: 900; }
+  .lbl.hot { color: var(--hot); }
+</style>
+</head><body>
+<div id="fig">
+  <svg id="wires"></svg>
+
+  <!-- あなた: CloudShell で実行するコマンド。右端から、そのコマンドの宛先へ線を引く -->
+  <div class="lane" style="left:24px;top:24px;width:232px;height:912px"><span class="lt"><img src="../icons/AWSCloudShell.svg">AWS CloudShell</span></div>
+  <div class="tx" style="left:48px;top:76px">あなたがコマンドを実行</div>
+  <div class="port" id="p1"><b>API を呼び出す</b><code>aws gamelift</code></div>
+  <div class="port" id="p2"><b>24 人を申し込む</b><code>apply-round.sh</code></div>
+  <div class="port" id="p3"><b>EventBridge の<br>ルールを作成</b><code>aws events</code></div>
+  <div class="port" id="p4"><b>イベントの<br>保存先を作成</b><code>bash setup.sh</code></div>
+  <div class="port" id="p5"><b>チームを表示</b><code>python3 teams.py</code><code>aws logs</code></div>
+
+  <!-- AWS Cloud > 東京リージョン > Amazon GameLift Servers -->
+  <div class="grp" style="left:280px;top:24px;width:496px;height:912px">
+    <div class="gl"><img src="../icons/AWSCloudlogo.svg"><span class="en">AWS Cloud</span></div>
+  </div>
+  <div class="grp region" style="left:304px;top:88px;width:448px;height:824px">
+    <div class="gl"><img src="../icons/Region.svg"><span class="ja">東京リージョン</span><span class="code">ap-northeast-1</span></div>
+  </div>
+  <div class="grp svc" id="gls" style="left:448px;top:144px;width:280px;height:306px">
+    <div class="gl"><img src="../icons/AmazonGameLiftServers.svg"><span class="en">Amazon GameLift Servers</span></div>
+  </div>
+  <div class="bx" style="top:200px;height:86px"><b>ルールセット</b><span>r1・r2・r3・r5・r6<br>ラウンド 4 は r3 を使う</span></div>
+  <div class="bx" style="top:302px;height:64px"><b>マッチメイキング設定</b><span>スタンドアロンモード</span></div>
+  <div class="bx" id="tk" style="top:382px;height:44px"><b>チケット</b></div>
+
+  <div class="lbl hot" id="l1" style="left:596px">イベント</div>
+  <div class="node wide" id="eb" style="left:472px;top:520px"><img id="ebi" src="../icons/AmazonEventBridge.svg"><div class="t">Amazon EventBridge</div><div class="s">既定のイベントバスと<br>EventBridge のルール</div></div>
+  <div class="lbl hot" id="l2" style="left:596px">書き込む</div>
+  <div class="bx" id="cw" style="top:712px;height:176px"><img src="../icons/AmazonCloudWatchLogs.svg"><b>Amazon CloudWatch Logs</b><span>ロググループ。<br>保持期間 7 日</span></div>
+
+  <!-- 手順の番号（README の章立て。README の番号が変わったら、ここも直す） -->
+  <div class="lbl" id="s1">手順 3〜8</div>
+  <div class="lbl" id="s2">手順 5〜8</div>
+  <div class="lbl" id="s3">手順 2</div>
+  <div class="lbl" id="s4">手順 1</div>
+  <div class="lbl" id="s5">手順 4〜8</div>
+</div>
+<script>
+// 線を引く（wires.js と同じ太さ・色・矢印）。点は [x, y] の配列
+function seg(pts, o = {}) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  p.setAttribute('points', pts.map((q) => q.join(',')).join(' '));
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', o.hot ? '#ff4d00' : '#0c0c0c'); p.setAttribute('stroke-width', '2.5');
+  if (o.arrow !== false) p.setAttribute('marker-end', o.hot ? 'url(#ah)' : 'url(#ak)');
+  document.getElementById('wires').appendChild(p);
+}
+window.addEventListener('load', async () => { await document.fonts.ready;
+  const $ = (id) => document.getElementById(id);
+  const F = $('fig').getBoundingClientRect();
+  const R = (id) => { const r = $(id).getBoundingClientRect(); return { l: r.left - F.left, t: r.top - F.top, r: r.right - F.left, b: r.bottom - F.top }; };
+  // 左の箱を、線の高さ（中心）に置く。線の上に手順の番号を置く（x=340、線の 30px 上）
+  const rows = [['p1', 's1', 294], ['p2', 's2', 404], ['p3', 's3', 548], ['p4', 's4', 746], ['p5', 's5', 856]];
+  for (const [p, s, y] of rows) {
+    const el = $(p); el.style.top = (y - el.offsetHeight / 2) + 'px';
+    const lb = $(s); lb.style.left = '340px'; lb.style.top = (y - lb.offsetHeight - 6) + 'px';
+  }
+  seg([[236, 294], [444, 294]]);                        // 手順 3〜8: aws gamelift → GameLift Servers の枠
+  seg([[236, 404], [468, 404]]);                        // 手順 5〜8: apply-round.sh → チケット
+  const ebi = R('ebi');
+  seg([[236, 548], [ebi.l - 4, 548]]);                  // 手順 2: aws events → Amazon EventBridge
+  seg([[236, 746], [468, 746]]);                        // 手順 1: setup.sh → CloudWatch Logs
+  seg([[472, 856], [236, 856]]);                        // 手順 4〜8: CloudWatch Logs → teams.py・aws logs
+  // イベントの経路
+  seg([[588, 450], [588, ebi.t - 4]], {hot: true});      // GameLift Servers → EventBridge
+  const eb = R('eb'), cw = R('cw');
+  seg([[588, eb.b + 4], [588, cw.t - 4]], {hot: true});  // EventBridge → CloudWatch Logs
+  const l1 = $('l1'); l1.style.top = ((450 + ebi.t) / 2 - l1.offsetHeight / 2) + 'px';
+  const l2 = $('l2'); l2.style.top = ((eb.b + cw.t) / 2 - l2.offsetHeight / 2) + 'px';
+  document.body.dataset.ready = '1';
+});
+</script>
+</body></html>

@@ -1,0 +1,4 @@
+{
+  "source": ["aws.gamelift"],
+  "detail-type": ["GameLift Matchmaking Event"]
+}

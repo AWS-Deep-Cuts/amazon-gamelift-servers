@@ -1,0 +1,49 @@
+{
+  "ruleLanguageVersion": "1.0",
+  "playerAttributes": [
+    {
+      "name": "years",
+      "type": "number",
+      "default": 0
+    },
+    {
+      "name": "infra",
+      "type": "number",
+      "default": 0
+    }
+  ],
+  "teams": [
+    {
+      "name": "red",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "blue",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "green",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "yellow",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    }
+  ],
+  "rules": [
+    {
+      "name": "FairYears",
+      "description": "The average years of each team is within 1.5 years of the average of all players",
+      "type": "distance",
+      "measurements": [
+        "avg(teams[*].players.attributes[years])"
+      ],
+      "referenceValue": "avg(flatten(teams[*].players.attributes[years]))",
+      "maxDistance": 1.5
+    }
+  ]
+}
