@@ -619,36 +619,40 @@ aws logs filter-log-events --region "${REGION}" --log-group-name "${LOG_GROUP}" 
 "type":"MatchmakingCancelled"
 ```
 
-続けて、`MatchmakingCancelled` のイベントの JSON を整形して表示します。
+続けて、`MatchmakingCancelled` のイベントの JSON を、`jq` で整形して表示します。
 
 ```bash
 aws logs filter-log-events --region "${REGION}" --log-group-name "${LOG_GROUP}" \
   --start-time "$((TRIAL_START_MS - 60000))" --filter-pattern '"MatchmakingCancelled"' \
-  --query 'events[0].message' --output text | python3 -m json.tool
+  --query 'events[0].message' --output json | jq 'fromjson'
 ```
+
+`--output json` を指定すると、AWS CLI は `message` の文字列を JSON の文字列として出力します。`jq` の `fromjson` は、その文字列を JSON として読み直して整形します。`--output text` を指定すると、AWS CLI は結果のページごとに `--query` を適用するため、イベントが無いページの分の `None` の行が続けて出力されることがあります。その場合、`python3 -m json.tool` で整形しようとすると、`Extra data` のエラーになります。
 
 出力の形の例は次のとおりです。一部を省略しています。ID や時刻などの値は環境ごとに異なります。
 
 ```json
 {
-    "detail-type": "GameLift Matchmaking Event",
-    "source": "aws.gamelift",
-    "time": "...",
-    "detail": {
-        "tickets": [
-            {
-                "ticketId": "trial-102030",
-                "startTime": "...",
-                "players": [ { "playerId": "member-01" } ]
-            }
-        ],
-        "customEventData": "aws-deepcuts-study-teams",
-        "type": "MatchmakingCancelled"
-    }
+  "detail-type": "GameLift Matchmaking Event",
+  "source": "aws.gamelift",
+  "time": "...",
+  "detail": {
+    "reason": "Cancelled",
+    "tickets": [
+      {
+        "ticketId": "trial-102030",
+        "players": [ { "playerId": "member-01" } ],
+        "startTime": "..."
+      }
+    ],
+    "customEventData": "aws-deepcuts-study-teams",
+    "type": "MatchmakingCancelled",
+    "message": "Cancelled by request."
+  }
 }
 ```
 
-1 つ目のコマンドで何も表示されない場合や、2 つ目のコマンドで `Expecting value` のエラーが表示された場合は、まだイベントが届いていません。1 分待ってから、もう一度実行してください。`python3 teams.py trial` でも、このチケットのイベントの種類と時刻を表示できます。それでもイベントが届かない場合は、[トラブルシューティング](#トラブルシューティング)の「手順 4 でイベントが届かない」の行を確認してください。
+1 つ目のコマンドで何も表示されない場合や、2 つ目のコマンドで `null (null) only strings can be parsed` のエラーが表示された場合は、まだイベントが届いていません。1 分待ってから、もう一度実行してください。`python3 teams.py trial` でも、このチケットのイベントの種類と時刻を表示できます。それでもイベントが届かない場合は、[トラブルシューティング](#トラブルシューティング)の「手順 4 でイベントが届かない」の行を確認してください。
 
 <!-- 要確認: C5・C6 届くイベントの種類と順序、届くまでの秒数、message の JSON の空白の有無。出力の例を実物に合わせて直す -->
 
