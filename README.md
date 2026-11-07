@@ -279,10 +279,10 @@ column -s, -t members.csv
 
 24 人の経験年数の合計は 121 年で、平均は約 5.04 年です。得意分野は、`app` が 11 人、`data` が 7 人、`infra` が 6 人です。経験年数の平均の約 5.04 年と、インフラが得意な人の 6 人は、手順 6 以降のルールを考えるときに使います。
 
-<!-- 画面写真: CloudWatch Logs のロググループの一覧。/aws/events/aws-deepcuts-flexmatch と保持期間 7 日を枠で囲む -->
+<!-- 画面写真: CloudWatch Logs の「ログ管理」の「ロググループ」タブ。/aws/events/aws-deepcuts-flexmatch と保持期間「1 週間」を枠で囲む -->
 
 > **この手順で確かめること**
-> - **やること**: CloudWatch のコンソールの左のメニューから「ロググループ」を開き、`/aws/events/aws-deepcuts-flexmatch` を確認します。次に、CloudShell で次のコマンドを実行し、リソースポリシーの中身を表示します。
+> - **やること**: CloudWatch のコンソールの左のメニューから「ログ」の「ログ管理」を開き、「ロググループ」タブで `/aws/events/aws-deepcuts-flexmatch` を確認します。次に、CloudShell で次のコマンドを実行し、リソースポリシーの中身を表示します。
 >
 >   ```bash
 >   aws logs describe-resource-policies --region "${REGION}" \
@@ -290,7 +290,7 @@ column -s, -t members.csv
 >     | python3 -m json.tool
 >   ```
 >
-> - **期待する結果**: ロググループ `/aws/events/aws-deepcuts-flexmatch` があり、保持期間は 7 日、ログストリームは 0 件です。ポリシーの `Principal` に `events.amazonaws.com` があり、`Condition` の `aws:SourceArn` に、`rule/aws-deepcuts-flexmatch-events` で終わる ARN があります。
+> - **期待する結果**: ロググループ `/aws/events/aws-deepcuts-flexmatch` があり、保持期間は 7 日（画面の「保持」の列では「1 週間」）、ログストリームは 0 件です。ポリシーの `Principal` に `events.amazonaws.com` があり、`Condition` の `aws:SourceArn` に、`rule/aws-deepcuts-flexmatch-events` で終わる ARN があります。
 > - **ここから分かること**: EventBridge がこのロググループに書き込めるのは、まだ作成していない EventBridge のルール `aws-deepcuts-flexmatch-events` から送られたイベントだけです。次の手順で、その EventBridge のルールを作成します。
 
 ## ２．結果を受け取る EventBridge のルールを作成する
@@ -372,11 +372,9 @@ aws events put-targets \
 <!-- 画面写真: EventBridge コンソールのルール aws-deepcuts-flexmatch-events の「イベントパターン」タブ。source と detail-type を枠で囲む -->
 
 > **この手順で確かめること**
-> - **やること**: EventBridge のコンソールの左のメニューから「ルール」を開き、イベントバス `default` の `aws-deepcuts-flexmatch-events` を開きます。「イベントパターン」タブと「ターゲット」タブを確認します。
+> - **やること**: EventBridge のコンソールの左のメニューから「デフォルトのイベントバス」の「ルール」を開き、`aws-deepcuts-flexmatch-events` を開きます。「イベントパターン」タブと「ターゲット」タブを確認します。
 > - **期待する結果**: イベントパターンが `event-pattern.json` と同じです。ターゲットに、ロググループ `/aws/events/aws-deepcuts-flexmatch` があります。
 > - **ここから分かること**: EventBridge のルールは、既定のイベントバスに届いたイベントのうち、イベントパターンに合うものだけをロググループへ送ります。まだイベントは 1 件も届いていないため、ロググループのログストリームは 0 件のままです。FlexMatch の側に何も設定しなくてもイベントが届くかは、手順 4 で確かめます。
-
-<!-- 要確認: C17 EventBridge コンソールのメニューとタブの名前 -->
 
 ## ３．ルールセットとマッチメイキング設定を作成する
 
@@ -506,14 +504,12 @@ aws gamelift describe-matchmaking-configurations --region "${REGION}" --names "$
 ```
 
 <!-- 画面写真: Amazon GameLift Servers コンソールの FlexMatch のルールセットの一覧。aws-deepcuts-teams-r1 を枠で囲む -->
-<!-- 画面写真: Amazon GameLift Servers コンソールのマッチメイキング設定 aws-deepcuts-study-teams の詳細。FlexMatch のモードが Standalone の欄を枠で囲む -->
+<!-- 画面写真: Amazon GameLift Servers コンソールのマッチメイキング設定 aws-deepcuts-study-teams の詳細。「モード」が「スタンドアロン」の欄を枠で囲む -->
 
 > **この手順で確かめること**
-> - **やること**: 手順 3-2 の出力の `Valid` を確認します。次に、Amazon GameLift Servers のコンソールを開き、左のメニューの FlexMatch の下から、ルールセットの一覧とマッチメイキング設定の一覧を確認します。
-> - **期待する結果**: 手順 3-2 の検査で `"Valid": true` が表示されました。コンソールに、ルールセット `aws-deepcuts-teams-r1` と、マッチメイキング設定 `aws-deepcuts-study-teams` があります。マッチメイキング設定の FlexMatch のモードは Standalone です。
+> - **やること**: 手順 3-2 の出力の `Valid` を確認します。次に、Amazon GameLift Servers のコンソールを開き、左のメニューの FlexMatch の下から、ルールセットの一覧とマッチメイキング設定の一覧を確認します。画面では、ルールセットは「マッチメーキングルールセット」、マッチメイキング設定は「マッチメーキング設定」と表示されます。
+> - **期待する結果**: 手順 3-2 の検査で `"Valid": true` が表示されました。コンソールに、ルールセット `aws-deepcuts-teams-r1` と、マッチメイキング設定 `aws-deepcuts-study-teams` があります。マッチメイキング設定の詳細の「モード」の欄は「スタンドアロン」です。
 > - **ここから分かること**: スタンドアロンモードの FlexMatch で作成したのは、ルールセットとマッチメイキング設定の 2 つだけです。ゲームサーバーを動かすフリートなどは作成していません。また、マッチメイキング設定を作成しただけでは、まだ何も処理されていません。処理は、次の手順でチケットを申し込んだときに始まります。
-
-<!-- 要確認: C17 コンソールのメニューの名前と、マッチメイキング設定の画面での表示名（マッチメーカーなど）。表示名が異なる場合は、手順の中で「画面では〇〇と表示されます」と 1 回だけ書く -->
 
 ## ４．試しに 1 人だけ申し込む
 
