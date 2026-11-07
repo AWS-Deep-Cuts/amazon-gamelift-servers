@@ -1149,21 +1149,24 @@ python3 teams.py 6
 
 `teams.py` は値を集計して表示しますが、ここではイベントの JSON そのものに `ruleEvaluationMetrics` が入っていることを、コンソールで確かめます。`PotentialMatchCreated` は、FlexMatch がルールを満たすマッチ案を作ったときに届くイベントです。公式のテストツールは、このイベントの `detail.ruleEvaluationMetrics` に入っている、ルールごとの合格数と不合格数を保存しています。CloudWatch Logs Insights は、ロググループのログをクエリで検索できる機能です。
 
-CloudWatch のコンソールの左のメニューから「Logs Insights」を開き、ロググループ `/aws/events/aws-deepcuts-flexmatch` を選んで、次のクエリを実行します。結果の行を開き、`detail.ruleEvaluationMetrics` の項目を確認します。
+CloudWatch のコンソールの左のメニューから「ログ」の「ログ分析」を開きます。CloudWatch Logs Insights は、ログ分析（Log Analytics）の画面に統合されています。以前の Logs Insights の画面の URL を開いた場合も、ログ分析の画面に移ります。
+
+クエリの欄に次のクエリを入力して、「実行」を選びます。1 行目の `SOURCE` は、クエリの対象のロググループと期間を指定する行です。ここでは、名前が `/aws/events/aws-deepcuts-flexmatch` で始まるロググループの、最近 1 時間のログを対象にしています。画面の「クエリスコープ」でロググループと期間を選んだ場合も、同じ形の行がクエリの欄に書き込まれます。
 
 ```text
+SOURCE logGroups(namePrefix: ["/aws/events/aws-deepcuts-flexmatch"], class: "STANDARD") START=-3600s END=0s |
 fields @timestamp, detail.type, @message
 | filter detail.type = "PotentialMatchCreated"
 | sort @timestamp desc
 | limit 5
 ```
 
-<!-- 要確認: C6・C17 Logs Insights のメニューの名前。ruleEvaluationMetrics が detail.ruleEvaluationMetrics.0.ruleName のような項目として表示されるか -->
+結果には、ラウンド 1〜4 と 6 の `PotentialMatchCreated` のイベントが表示されます。いちばん上の行がラウンド 6 のイベントです。行を選ぶと、イベントの項目が 1 行ずつ表示されます。`ruleEvaluationMetrics` は、`detail.ruleEvaluationMetrics.0.ruleName` のように、配列の番号の付いた項目として表示されます。
 
-<!-- 画面写真: CloudWatch Logs Insights の PotentialMatchCreated の結果。ruleEvaluationMetrics の FairYears の failedCount を枠で囲む -->
+<!-- 画面写真: ログ分析の PotentialMatchCreated の結果。ruleEvaluationMetrics の FairYears の failedCount を枠で囲む -->
 
 > **この手順で確かめること**
-> - **やること**: `teams.py 6` の、最後のチケットの申し込みから `MatchmakingSucceeded` までの秒数と、ルールごとの合格数と不合格数を確認します。CloudWatch Logs Insights の結果でも、`FairYears` の不合格数を確認します。
+> - **やること**: `teams.py 6` の、最後のチケットの申し込みから `MatchmakingSucceeded` までの秒数と、ルールごとの合格数と不合格数を確認します。ログ分析の結果でも、`FairYears` の不合格数を確認します。
 > - **期待する結果**: マッチが成立する見込みです。成立した場合、各チームの経験年数の平均の差は 1 年以内です。成立までの秒数は、最後の申し込みから 10 秒以上になる見込みです。`FairYears` の不合格数は、0 より大きい見込みです。
 > - **ここから分かること**: 緩和の設定を使うと、厳しい条件で探し始め、決まらなければ条件を緩められます。API の説明文は、この設定を、最善のマッチを無期限に待たせるのではなく、適切な時間でプレイヤーをゲームに入れるための機能として説明しています。`FairYears` の不合格数と成立までの秒数から、FlexMatch が厳しい条件で候補を落とし続け、待ち時間が 10 秒を超えて条件が緩んでから分け方を見つけたことを、数字で確かめられます。
 
