@@ -73,10 +73,15 @@ echo ""
 # ─── [2/6] マッチメイキング設定を削除 ───────────────────────────
 echo "[2/6] マッチメイキング設定を削除..."
 config_exists() {
-  local count
-  count=$(aws gamelift describe-matchmaking-configurations --region "${REGION}" --names "${CONFIG_NAME}" \
-    --query 'length(Configurations)' --output text 2>/dev/null || echo "unknown")
-  [[ "${count}" != "0" ]]
+  local out
+  if out=$(aws gamelift describe-matchmaking-configurations --region "${REGION}" --names "${CONFIG_NAME}" \
+    --query 'length(Configurations)' --output text 2>&1); then
+    [[ "${out}" != "0" ]]
+  else
+    # 指定した名前の設定が無いと、API は空の一覧ではなく InvalidRequestException を返す。これは「無い」と判定する
+    # それ以外のエラー（権限が無い、通信できないなど）は、確かめられなかったため「残っている」と判定する
+    [[ "${out}" != *InvalidRequestException* && "${out}" != *NotFoundException* ]]
+  fi
 }
 if config_exists; then
   # 止めたチケットが終わるまでは削除できないことがあるため、10 秒おきに最大 3 分試す
