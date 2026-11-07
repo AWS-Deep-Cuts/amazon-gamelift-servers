@@ -150,7 +150,8 @@ def print_timeline(events, start_ms):
     rows = []
     for event in events:
         kind = event.get("detail", {}).get("type", "?")
-        sec = (parse_time(event.get("time")) or start_ms / 1000) - start_ms / 1000
+        # イベントの time は秒の単位のため、申し込みと同じ秒のイベントは負の値になることがある。0 にそろえる
+        sec = max(0.0, (parse_time(event.get("time")) or start_ms / 1000) - start_ms / 1000)
         count = len(event.get("detail", {}).get("tickets", []) or [])
         if rows and rows[-1][0] == kind:
             rows[-1][2] = sec
@@ -164,17 +165,36 @@ def print_timeline(events, start_ms):
     print("")
 
 
+def format_count(value):
+    """イベントの合格数と不合格数は 65.0 のような小数で届くため、整数なら整数で表示する。"""
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
 def print_rule_metrics(events, match_ids):
-    """PotentialMatchCreated のイベントにある、ルールごとの合格数と不合格数を表示する。"""
-    potentials = [e for e in events if e.get("detail", {}).get("type") == "PotentialMatchCreated"]
+    """PotentialMatchCreated のイベントにある、ルールごとの合格数と不合格数を表示する。
+
+    PotentialMatchCreated のイベントが無い場合（ラウンド 5 のように、マッチ案ができなかった場合）は、
+    MatchmakingTimedOut のイベントにも ruleEvaluationMetrics が入るため、そちらから表示する。
+    """
+    source = "PotentialMatchCreated"
+    potentials = [e for e in events if e.get("detail", {}).get("type") == source]
     chosen = [e for e in potentials if e.get("detail", {}).get("matchId") in match_ids] or potentials[-1:]
+    if not chosen:
+        timed_out = [e for e in events if e.get("detail", {}).get("type") == "MatchmakingTimedOut"
+                     and e.get("detail", {}).get("ruleEvaluationMetrics")]
+        if timed_out:
+            source = "MatchmakingTimedOut"
+            chosen = timed_out[-1:]
     metrics = chosen[0].get("detail", {}).get("ruleEvaluationMetrics") if chosen else None
-    print("ルールごとの合格数と不合格数。PotentialMatchCreated のイベントの ruleEvaluationMetrics から")
+    print(f"ルールごとの合格数と不合格数。{source} のイベントの ruleEvaluationMetrics から")
     if not metrics:
         print("  イベントに含まれていません。")
     else:
         for m in metrics:
-            print(f"  {m.get('ruleName'):<14} 合格数 passedCount: {m.get('passedCount')} / 不合格数 failedCount: {m.get('failedCount')}")
+            print(f"  {m.get('ruleName'):<14} 合格数 passedCount: {format_count(m.get('passedCount'))}"
+                  f" / 不合格数 failedCount: {format_count(m.get('failedCount'))}")
     print("")
 
 
@@ -221,7 +241,8 @@ def show_from_logs(args, env, members, tickets, start_ms, pair_ids):
         last_start = max(((parse_time(t.get("startTime")) or 0) for e in succeeded for t in e["detail"].get("tickets", []) or []), default=0)
         done_at = parse_time(succeeded[0].get("time"))
         if last_start and done_at:
-            print(f"最後のチケットの申し込みから MatchmakingSucceeded までの秒数: {done_at - last_start:.0f} 秒")
+            # イベントの time は秒の単位のため、1 秒以内に成立すると負の値になることがある。0 にそろえる
+            print(f"最後のチケットの申し込みから MatchmakingSucceeded までの秒数: {max(0.0, done_at - last_start):.0f} 秒")
     else:
         print("MatchmakingSucceeded のイベントは届いていません。")
         print_rule_metrics(events, set())
