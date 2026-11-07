@@ -178,7 +178,7 @@ CloudShell を使う権限は、このポリシーとは別に必要です。た
 | setup.sh | `logs create-log-group --tags` | `logs:CreateLogGroup`、`logs:TagResource` | Logs |
 | setup.sh | `logs put-retention-policy` | `logs:PutRetentionPolicy` | Logs |
 | setup.sh | `logs put-resource-policy` | `logs:PutResourcePolicy` | Logs |
-| 手順 1・cleanup.sh | `logs describe-resource-policies` | `logs:DescribeResourcePolicies` | Logs |
+| 手順 1・cleanup.sh・手順 9 | `logs describe-resource-policies` | `logs:DescribeResourcePolicies` | Logs |
 | 手順 2 | `events put-rule`、`events put-targets` | `events:PutRule`、`events:PutTargets` | EventBridgeRule |
 | 手順 3・各ラウンド | `gamelift validate-matchmaking-rule-set` | `gamelift:ValidateMatchmakingRuleSet` | FlexMatch |
 | 手順 3・各ラウンド | `gamelift create-matchmaking-rule-set --tags` | `gamelift:CreateMatchmakingRuleSet`、`gamelift:TagResource` | FlexMatch |
@@ -1225,9 +1225,10 @@ aws gamelift describe-matchmaking-configurations --region "${REGION}" --query 'C
 aws gamelift describe-matchmaking-rule-sets --region "${REGION}" --query 'RuleSets[].RuleSetName'
 aws events describe-rule --region "${REGION}" --name aws-deepcuts-flexmatch-events
 aws logs describe-log-groups --region "${REGION}" --log-group-name-prefix /aws/events/aws-deepcuts
+aws logs describe-resource-policies --region "${REGION}" --query "resourcePolicies[?policyName=='aws-deepcuts-flexmatch-events'].policyName"
 ```
 
-1 行目と 2 行目の出力に、`aws-deepcuts` で始まる名前がありません。3 行目は `ResourceNotFoundException` のエラーを表示します。これは、EventBridge のルールが削除済みであることを表します。4 行目は `"logGroups": []` を表示します。
+1 行目と 2 行目の出力に、`aws-deepcuts` で始まる名前がありません。3 行目は `ResourceNotFoundException` のエラーを表示します。これは、EventBridge のルールが削除済みであることを表します。4 行目は `"logGroups": []` を表示します。5 行目は `[]` を表示します。これは、リソースポリシーが削除済みであることを表します。
 
 `⚠️` が付いた行が表示されず、`✅ すべてのリソースの削除が完了しました！` と表示されたことを確かめてから、次のコマンドでリポジトリを削除します。`cleanup.sh` は `resource-ids.env` を読み込んでリソースを削除するため、先にリポジトリを削除すると、後片付けをやり直せなくなります。
 
