@@ -1,0 +1,37 @@
+{
+  "ruleLanguageVersion": "1.0",
+  "playerAttributes": [
+    {
+      "name": "years",
+      "type": "number",
+      "default": 0
+    },
+    {
+      "name": "infra",
+      "type": "number",
+      "default": 0
+    }
+  ],
+  "teams": [
+    {
+      "name": "red",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "blue",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "green",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "yellow",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    }
+  ]
+}

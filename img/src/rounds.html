@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<!-- 6 回のラウンド（README の「ハンズオンのゴール」、記事の「ハンズオンはこちら！」）。DESIGN 6-8。
+     2 段 × 3 列。上の段に左から 1 → 2 → 3、下の段に左から 4 → 5 → 6。線は段の中の水平の矢印だけ。
+     各箱: 上に「ラウンド N」、題に幹事の要望、補足にルールセットの変化。
+     根拠（hands-on/rulesets/*.json と README 手順 5〜8）:
+     - r1-teams.json: teams だけ。red・blue・green・yellow、各 6 人
+     - r2-years.json: FairYears（distance、maxDistance 1）を足す
+     - r3-infra.json: SpreadInfra（distance、maxDistance 0.1）を足す
+     - ラウンド 4: ルールセットは r3 のまま。apply-round.sh 4 --pair member-01,member-02 で 2 人を 1 枚のチケットで申し込む
+     - r5-strict.json: FairYears の maxDistance を 0.1 にする。全員の経験年数の合計が 121 年のため、満たす分け方が無い（README 手順 8）
+     - r6-expand.json: expansions を足す。10 秒待つと FairYears の maxDistance を 1 に緩める
+     結果の札は、成立しないことが計算で分かるラウンド 5 だけに付ける。ラウンド 1〜4・6 の結果は実機で確かめてから付ける
+     （要確認: C20。予備のルールセットに切り替えたラウンドがあれば、補足の値も書き換える）。
+     横幅の内訳: 余白 24 ＋ 箱 224 ＋ 矢印 40 ＋ 箱 224 ＋ 矢印 40 ＋ 箱 224 ＋ 余白 24 ＝ 800。箱の中で使える幅は 約 194px。
+     縦の内訳: 上の段 24〜190、48 空けて下の段 238〜404、下の余白 24。強調: ラウンド 5 -->
+<link rel="stylesheet" href="diagram.css">
+<link rel="stylesheet" href="deepcuts.css">
+<script src="wires.js"></script>
+<style>
+  #fig { width: 800px; height: 428px; }
+  .st { width: 224px; height: 166px; padding: 10px 14px; }
+  .st.hot { padding: 9px 13px; }
+  .st > b { white-space: nowrap; margin-top: 4px; }
+  .st > span { white-space: nowrap; color: #4a4843; line-height: 23px; }
+  .st.hot > b { color: var(--hot); }
+  .st > i { font-family: var(--font-body); font-weight: 900; }
+  .st > em.res { font-style: normal; position: absolute; right: 10px; top: 10px; background: var(--hot); color: #fff; font-size: 16px; font-weight: 900; line-height: 22px; padding: 1px 8px; }
+</style>
+</head><body>
+<div id="fig">
+  <svg id="wires"></svg>
+  <div class="st" style="left:24px;top:24px"><i>ラウンド 1</i><b>6 人ずつ<br>4 チームに分けたい</b><span>r1: <code>teams</code> だけ</span></div>
+  <div class="st" style="left:288px;top:24px"><i>ラウンド 2</i><b>経験年数の平均を<br>そろえたい</b><span>r2: <code>FairYears</code> を足す。<br>差 1 年以内</span></div>
+  <div class="st" style="left:552px;top:24px"><i>ラウンド 3</i><b>インフラが得意な人を<br>各チームに</b><span>r3: <code>SpreadInfra</code> を足す</span></div>
+
+  <div class="st" style="left:24px;top:238px"><i>ラウンド 4</i><b>2 人を<br>同じチームにしたい</b><span>r3 のまま。2 人を<br>1 枚のチケットで申し込む</span></div>
+  <div class="st hot" style="left:288px;top:238px"><i>ラウンド 5</i><em class="res">成立しない</em><b>平均をもっと<br>厳密にそろえたい</b><span>r5: <code>FairYears</code> の差を<br>0.1 年以内</span></div>
+  <div class="st" style="left:552px;top:238px"><i>ラウンド 6</i><b>決まらなければ<br>緩めたい</b><span>r6: 緩和の設定を足す<br>10 秒で差 1 年まで</span></div>
+</div>
+<script>
+// 線を引く（wires.js と同じ太さ・色・矢印）。点は [x, y] の配列
+function seg(pts, o = {}) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  p.setAttribute('points', pts.map((q) => q.join(',')).join(' '));
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', o.hot ? '#ff4d00' : '#0c0c0c'); p.setAttribute('stroke-width', '2.5');
+  p.setAttribute('marker-end', o.hot ? 'url(#ah)' : 'url(#ak)');
+  document.getElementById('wires').appendChild(p);
+}
+window.addEventListener('load', async () => { await document.fonts.ready;
+  seg([[248, 107], [284, 107]]);  // 1 → 2
+  seg([[512, 107], [548, 107]]);  // 2 → 3
+  seg([[248, 321], [284, 321]]);  // 4 → 5
+  seg([[512, 321], [548, 321]]);  // 5 → 6
+  document.body.dataset.ready = '1';
+});
+</script>
+</body></html>

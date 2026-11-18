@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<!-- ルールセットの 4 つの部分（記事の「ルールセット」、README 手順 8 のラウンド 6）。DESIGN 6-2。
+     左に番号の列、中央にハンズオンの最後に使うルールセット（ラウンド 6）のカード、説明は図の下に 2 × 2 で並べる。カードと説明は番号 1〜4 で対応させ、線でつながない。
+     根拠:
+     - カードの JSON は hands-on/rulesets/r6-expand.json。description の行、blue・green・yellow の行、SpreadInfra の measurements と referenceValue を省略した
+     - 4 つの部分 playerAttributes・teams・rules・expansions。teams だけが必須（gl-043）
+     - distance ルールと avg・flatten のプロパティ式でチームの平均を全体の平均にそろえる形は公式サンプルと同じ（gl-048）
+     - expansions の target と steps の waitTimeSeconds・value（gl-052、gl-054）
+     - 説明の数字: 4 チーム × 6 人。FairYears は maxDistance 0.1、10 秒で 1 に緩める。SpreadInfra は 0.1（README 手順 6・8、記事の「ルールセット」）
+     横幅の内訳（x は #fig の左端から）:
+     - カードの段: 余白 24 ＋ 番号の列 48（番号の丸 26 は 24〜50、範囲を示す縦の線 x=60、短い横の線 60〜66）＋ カード 590（72〜662。最長の行 61 文字 × 9 ＋ 余白）＋ 余白 138 ＝ 800
+     - 説明の段: 余白 24 ＋ 説明の箱 368（24〜392）＋ 16 ＋ 説明の箱 368（408〜776）＋ 余白 24 ＝ 800
+     縦の内訳: カード 24〜約 580、24 空けて説明の 1 段目、16 空けて 2 段目、24 空けて注記、下の余白 24（説明と注記の位置と図の高さは、カードの下端から計算する）。
+     強調: 3 のルール -->
+<link rel="stylesheet" href="diagram.css">
+<link rel="stylesheet" href="deepcuts.css">
+<script src="wires.js"></script>
+<style>
+  #fig { width: 800px; height: 980px; }
+  .card { left: 72px; top: 24px; width: 590px; }
+  .card > .h { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+  .card > .h code { font-family: var(--font-mono); font-weight: 800; font-size: 15px; color: #cfcabd; }
+  .card > pre { line-height: 22.5px; }
+  .card > pre strong { font-weight: 800; }
+
+  /* 番号の丸 */
+  .nb { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 16px; }
+  .nb.hot { background: var(--hot); }
+
+  /* 説明の箱 */
+  .ex { position: absolute; width: 368px; border: 3px solid var(--ink); background: #fff; padding: 9px 12px 10px; }
+  .ex.hot { border-color: var(--hot); border-width: 4px; padding: 8px 11px 9px; }
+  .ex > .hd { display: flex; align-items: center; gap: 10px; }
+  .ex > .hd .nb { position: static; flex: none; }
+  .ex > .hd b { font-size: 19px; font-weight: 900; line-height: 27px; white-space: nowrap; }
+  .ex.hot > .hd b { color: var(--hot); }
+  .ex > code.k { display: block; margin: 2px 0 0 36px; font-family: var(--font-mono); font-weight: 800; font-size: 15px; line-height: 22px; color: var(--grey); }
+  .ex > span { display: block; margin: 4px 0 0 36px; font-size: 16px; font-weight: 500; line-height: 23px; white-space: nowrap; }
+  .ex code { font-family: var(--font-mono); font-weight: 800; font-size: 15px; }
+  .tx { position: absolute; left: 24px; font-size: 16px; font-weight: 500; line-height: 23px; white-space: nowrap; }
+  .tx code { font-family: var(--font-mono); font-weight: 800; font-size: 15px; }
+</style>
+</head><body>
+<div id="fig">
+  <svg id="wires"></svg>
+  <div class="card" id="json">
+    <div class="h">ハンズオンの最後に使うルールセット<code>rulesets/r6-expand.json</code></div>
+<pre>{
+  "ruleLanguageVersion": "1.0",
+  <span id="r1"><strong>"playerAttributes"</strong>: [
+    { "name": "years", "type": "number", "default": 0 },
+    { "name": "infra", "type": "number", "default": 0 } ],</span>
+  <span id="r2"><strong>"teams"</strong>: [
+    { "name": "red",    "minPlayers": 6, "maxPlayers": 6 },
+    <i>… blue・green・yellow も同じ</i> ],</span>
+  <span id="r3"><b>"rules"</b>: [
+    { "name": <b>"FairYears"</b>, "type": "distance",
+      "measurements":
+        [ "avg(teams[*].players.attributes[years])" ],
+      "referenceValue":
+        "avg(flatten(teams[*].players.attributes[years]))",
+      "maxDistance": 0.1 },
+    { "name": <b>"SpreadInfra"</b>, "type": "distance",
+      <i>…</i>
+      "maxDistance": 0.1 } ],</span>
+  <span id="r4"><strong>"expansions"</strong>: [
+    { "target": "rules[FairYears].maxDistance",
+      "steps": [ { "waitTimeSeconds": 10, "value": 1 } ] } ]</span>
+}</pre>
+  </div>
+
+  <div class="nb" id="n1">1</div>
+  <div class="nb" id="n2">2</div>
+  <div class="nb hot" id="n3">3</div>
+  <div class="nb" id="n4">4</div>
+
+  <div class="ex" id="e1" style="left:24px">
+    <div class="hd"><span class="nb">1</span><b>プレイヤー属性の宣言</b></div><code class="k">playerAttributes</code>
+    <span><code>years</code> は経験年数。<br><code>infra</code> はインフラが得意なら 1、<br>それ以外は 0</span></div>
+  <div class="ex" id="e2" style="left:408px">
+    <div class="hd"><span class="nb">2</span><b>チームの定義</b></div><code class="k">teams</code>
+    <span>4 チーム。各チームちょうど 6 人</span></div>
+  <div class="ex hot" id="e3" style="left:24px">
+    <div class="hd"><span class="nb hot">3</span><b>ルール</b></div><code class="k">rules</code>
+    <span><code>FairYears</code>: 各チームの経験年数の平均と、<br>全員の平均の差を 0.1 以内にする<br><code>SpreadInfra</code>: 各チームの<br>インフラが得意な人の割合を、<br>全体の割合から 0.1 以内にする</span></div>
+  <div class="ex" id="e4" style="left:408px">
+    <div class="hd"><span class="nb">4</span><b>緩和の設定</b></div><code class="k">expansions</code>
+    <span>10 秒待っても決まらなければ、<br><code>FairYears</code> の差を 1 まで緩める</span></div>
+
+  <div class="tx" id="note"><code>description</code> の行と、blue・green・yellow の行と、<code>SpreadInfra</code> の式を省略している。</div>
+</div>
+<script>
+// 線を引く（wires.js と同じ太さと色）。点は [x, y] の配列
+function path(pts, hot) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  p.setAttribute('points', pts.map((q) => q.join(',')).join(' '));
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', hot ? '#ff4d00' : '#0c0c0c'); p.setAttribute('stroke-width', '2.5');
+  document.getElementById('wires').appendChild(p);
+}
+window.addEventListener('load', async () => {
+  await document.fonts.ready;
+  const F = document.getElementById('fig').getBoundingClientRect();
+  const X = 60;                                   // 範囲を示す縦の線の位置
+  for (const n of [1, 2, 3, 4]) {
+    // 部分の最初の行と最後の行の縦の中心
+    const rows = [...document.getElementById('r' + n).getClientRects()].filter((q) => q.width > 0);
+    const c = (q) => Math.round(q.top + q.height / 2 - F.top);
+    const top = c(rows[0]), bottom = c(rows[rows.length - 1]);
+    const nb = document.getElementById('n' + n), hot = nb.classList.contains('hot');
+    nb.style.left = '24px'; nb.style.top = (top - 13) + 'px';
+    // 番号の丸の右から縦の線へ、縦の線で部分の範囲を示し、上下の端からカードへ短い横の線を引く
+    path([[52, top], [X, top]], hot);
+    path([[X + 6, top], [X, top], [X, bottom], [X + 6, bottom]], hot);
+  }
+  // 説明の箱: カードの下端から 24 空けて 1 段目、16 空けて 2 段目
+  const card = document.getElementById('json').getBoundingClientRect();
+  const y1 = Math.ceil(card.bottom - F.top) + 24;
+  const h = (id) => document.getElementById(id).offsetHeight;
+  const row1 = Math.max(h('e1'), h('e2')), row2 = Math.max(h('e3'), h('e4'));
+  for (const id of ['e1', 'e2']) { const el = document.getElementById(id); el.style.top = y1 + 'px'; el.style.height = row1 + 'px'; }
+  const y2 = y1 + row1 + 16;
+  for (const id of ['e3', 'e4']) { const el = document.getElementById(id); el.style.top = y2 + 'px'; el.style.height = row2 + 'px'; }
+  const note = document.getElementById('note'); const y3 = y2 + row2 + 24; note.style.top = y3 + 'px';
+  document.getElementById('fig').style.height = (y3 + note.offsetHeight + 24) + 'px';
+  document.body.dataset.ready = '1';
+});
+</script>
+</body></html>

@@ -1,0 +1,59 @@
+{
+  "ruleLanguageVersion": "1.0",
+  "playerAttributes": [
+    {
+      "name": "years",
+      "type": "number",
+      "default": 0
+    },
+    {
+      "name": "infra",
+      "type": "number",
+      "default": 0
+    }
+  ],
+  "teams": [
+    {
+      "name": "red",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "blue",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "green",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    },
+    {
+      "name": "yellow",
+      "minPlayers": 6,
+      "maxPlayers": 6
+    }
+  ],
+  "rules": [
+    {
+      "name": "FairYears",
+      "description": "The average years of each team is within 1 year of the average of all players",
+      "type": "distance",
+      "measurements": [
+        "avg(teams[*].players.attributes[years])"
+      ],
+      "referenceValue": "avg(flatten(teams[*].players.attributes[years]))",
+      "maxDistance": 1
+    },
+    {
+      "name": "SpreadInfra",
+      "description": "The share of infra players in each team is within 0.1 of the share in the whole match",
+      "type": "distance",
+      "measurements": [
+        "avg(teams[*].players.attributes[infra])"
+      ],
+      "referenceValue": "avg(flatten(teams[*].players.attributes[infra]))",
+      "maxDistance": 0.1
+    }
+  ]
+}

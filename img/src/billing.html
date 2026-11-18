@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<!-- FlexMatch の料金の要素とハンズオンの上限（記事の「料金」）。DESIGN 6-6。
+     上の段: 料金の要素は 2 つ。中段: ルールセットとマッチメイキング設定を作成しておくことには料金の項目が無い。下の段: ハンズオンの上限の表。
+     根拠（AWS Price List、AmazonGameLift、ap-northeast-1、2026-11-01 取得。価格表の版の公開日 2026-10-13）:
+     - プレイヤーパッケージ 1 個 $0.00002（100 万個あたり $20）。毎月の無料枠 50,000 個（gl-112、gl-113）
+     - マッチメイキング時間 1 時間あたり $1.00。毎月の無料枠 5 時間（gl-112、gl-113）
+     - ルールセットとマッチメイキング設定には SKU が無い（gl-114）
+     - ハンズオンの上限: 申し込むプレイヤーは 1 + 24 × 6 = 145 人。145 個 × $0.00002 ≈ $0.003。
+       145 人 × 120 秒 = 17,400 秒 ≈ 4.83 時間 × $1.00 ≈ $4.83。合計 最大で約 $4.84（gl-120、DESIGN 5 章、README の費用の見積もり）
+     - マッチメイキング時間は、プレイヤー 1 人ごとにチケットが処理中だった時間をすべて数えると仮定した上限（記事の料金の節と同じ仮定）
+     横幅の内訳（x は #fig の左端から）:
+     - 上の段: 余白 24 ＋ カード 364（24〜388）＋ 24 ＋ カード 364（412〜776）＋ 余白 24 ＝ 800
+     - 中段: 余白 24 ＋ 箱 752 ＋ 余白 24 ＝ 800
+     - 表: 余白 24 ＋ 表 752（料金の要素 200、計算 400、上限 152）＋ 余白 24 ＝ 800
+     縦の内訳と図の高さは、各部品の高さから計算する（24 ずつ空ける）。強調: マッチメイキング時間の行 -->
+<link rel="stylesheet" href="diagram.css">
+<link rel="stylesheet" href="deepcuts.css">
+<script src="wires.js"></script>
+<style>
+  #fig { width: 800px; height: 560px; }
+  .card { top: 24px; width: 364px; }
+  .card > .h { font-size: 19px; padding: 8px 14px; }
+  .card > .h .n { color: var(--hot); margin-right: 8px; font-family: var(--font-mono); }
+  .card > .body { padding: 12px 14px 14px; font-size: 17px; font-weight: 700; line-height: 30px; }
+  .card > .body .m { font-family: var(--font-mono); font-weight: 800; font-size: 17px; }
+  .card > .body .free { font-size: 16px; font-weight: 500; color: #4a4843; }
+  .card.hot > .h .n { color: #fff; }
+
+  .none { position: absolute; left: 24px; width: 752px; border: 2px dashed var(--grey); color: #4a4843; font-size: 16px; font-weight: 700;
+    padding: 10px 16px; text-align: center; }
+
+  .rowl { left: 24px; font-size: 18px; }
+  .rowl span { margin-left: 12px; font-size: 16px; font-weight: 500; color: #4a4843; }
+  .tbl { left: 24px; width: 752px; font-size: 17px; }
+  .tbl th { font-size: 16px; }
+  .tbl td { line-height: 1.5; }
+  .tbl .num { font-size: 17px; }
+  .tbl td.calc { font-family: var(--font-mono); font-weight: 800; font-size: 15px; line-height: 24px; }
+  .tbl td.calc .j { font-family: var(--font-body); font-weight: 700; font-size: 16px; }
+  .tbl tr.hot td { color: var(--ink); }
+  .tbl tr.sum td { border-bottom: 3px solid var(--ink); font-weight: 900; }
+  .tx { position: absolute; left: 24px; font-size: 16px; font-weight: 500; line-height: 24px; white-space: nowrap; color: #4a4843; }
+</style>
+</head><body>
+<div id="fig">
+  <svg id="wires"></svg>
+
+  <div class="card" id="c1" style="left:24px">
+    <div class="h"><span class="n">1</span>プレイヤーパッケージ</div>
+    <div class="body">100 万個あたり <span class="m">$20</span><br>1 個 <span class="m">$0.00002</span><br><span class="free">毎月の無料枠 50,000 個</span></div>
+  </div>
+  <div class="card" id="c2" style="left:412px">
+    <div class="h"><span class="n">2</span>マッチメイキング時間</div>
+    <div class="body">1 時間あたり <span class="m">$1.00</span><br><span class="free">毎月の無料枠 5 時間</span></div>
+  </div>
+
+  <div class="none" id="none">ルールセットとマッチメイキング設定を作成しておくことには、料金の項目が無い</div>
+
+  <div class="rowl" id="ttl">ハンズオンの上限<span>申し込むプレイヤーは 1 + 24 × 6 = 145 人</span></div>
+  <table class="tbl" id="tbl">
+    <colgroup><col style="width:200px"><col style="width:400px"><col style="width:152px"></colgroup>
+    <tr><th>料金の要素</th><th>計算</th><th style="text-align:right">上限</th></tr>
+    <tr><td><b>プレイヤーパッケージ</b></td><td class="calc">145 <span class="j">個</span> × $0.00002</td><td class="num">約 $0.003</td></tr>
+    <tr class="hot"><td><b>マッチメイキング時間</b></td><td class="calc">145 <span class="j">人</span> × 120 <span class="j">秒</span> ≈ 4.83 <span class="j">時間</span><br>4.83 <span class="j">時間</span> × $1.00</td><td class="num">約 $4.83</td></tr>
+    <tr class="sum"><td><b>合計</b></td><td></td><td class="num">最大で約 $4.84</td></tr>
+  </table>
+
+  <div class="tx" id="note">東京リージョンの単価。AWS Price List から 2026 年 11 月 1 日に取得。<br>マッチメイキング時間は、プレイヤー 1 人ごとに、チケットが処理中だった時間を<br>すべて数えると仮定した上限。無料枠の対象なら $0。</div>
+</div>
+<script>
+window.addEventListener('load', async () => {
+  await document.fonts.ready;
+  const $ = (id) => document.getElementById(id);
+  // 2 枚のカードの高さをそろえ、下の部品を 24 ずつ空けて並べる
+  const ch = Math.max($('c1').offsetHeight, $('c2').offsetHeight);
+  $('c1').style.height = ch + 'px'; $('c2').style.height = ch + 'px';
+  let y = 24 + ch + 24;
+  for (const [id, gap] of [['none', 24], ['ttl', 12], ['tbl', 24], ['note', 24]]) {
+    const el = $(id); el.style.top = y + 'px'; y += el.offsetHeight + gap;
+  }
+  $('fig').style.height = y + 'px';
+  document.body.dataset.ready = '1';
+});
+</script>
+</body></html>

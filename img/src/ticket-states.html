@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<!-- チケットの状態と、状態が変わるところで届くイベントの種類（記事の「1 回のマッチメイキングで起きること」、README 手順 4）。DESIGN 6-4。
+     主な流れを上から下へ: StartMatchmaking → QUEUED → SEARCHING → COMPLETED。イベントの種類の札は、状態が変わる縦の矢印の右に置く。
+     承諾が必要な設定だけ、SEARCHING の後に REQUIRES_ACCEPTANCE を通る（点線）。失敗への分かれ道は TIMED_OUT・CANCELLED・FAILED。
+     根拠:
+     - チケットの状態の列挙 QUEUED・SEARCHING・REQUIRES_ACCEPTANCE・PLACING・COMPLETED・FAILED・CANCELLED・TIMED_OUT
+       （botocore gamelift 2015-10-01 MatchmakingConfigurationStatus。gl-070）。PLACING はスタンドアロンモードで通るか未確認のため描かない（gl-075）
+     - StopMatchmaking で止めたチケットは CANCELLED（gl-080）。AcceptMatch は承諾が必要な設定だけ（gl-081）
+     - イベントの種類の名前 MatchmakingSearching・PotentialMatchCreated・AcceptMatch・AcceptMatchCompleted・MatchmakingSucceeded・
+       MatchmakingTimedOut・MatchmakingCancelled・MatchmakingFailed（公式サンプル amazon-gamelift-testing-toolkit の FlexMatchEvent.cs。gl-086、gl-087）
+     - 状態とイベントの種類の対応は、公式サンプルのコードをもとにした筆者の整理（記事の表と同じ。gl-094）
+     横幅の内訳（x は #fig の左端から）:
+     - 上の部分: 余白 24 ＋ 24 ＋ 失敗への線 x=48 ＋ 32 ＋ 主な流れの箱 140（80〜220。縦の線は x=150）。札は線の右 x=162〜380
+       ＋ 60 ＋ REQUIRES_ACCEPTANCE の箱 224（440〜664）＋ 48 ＋ 戻りの点線 x=712 ＋ 余白 88 ＝ 800
+     - 点線の札: AcceptMatch は J1 からの点線の上で、右端を矢印の先から 16 離す。AcceptMatchCompleted は戻りの点線の
+       水平の部分の上で、左端 x=240
+     - 下の段: 3 つの列の中心 x=150・400・648。札の範囲は 51〜249・296〜504・559〜738
+     縦の内訳: 入口 24〜84、QUEUED 88〜132、SEARCHING 196〜240、PotentialMatchCreated 256〜282、AcceptMatch 306〜332、
+     J1 y=340、REQUIRES_ACCEPTANCE 308〜372、AcceptMatchCompleted 390〜416、J2 y=428、
+     COMPLETED 496〜540、失敗への水平の線 y=588、下の段の箱 652〜696、札 712〜738、注記 762〜808、下の余白 24。
+     失敗への線（x=48 と y=588）は、点線の経路（x=150〜712、y=340〜428）と交わらない。強調: COMPLETED と MatchmakingSucceeded -->
+<link rel="stylesheet" href="diagram.css">
+<link rel="stylesheet" href="deepcuts.css">
+<script src="wires.js"></script>
+<style>
+  #fig { width: 800px; height: 832px; }
+  .chip { font-size: 15px; line-height: 22px; white-space: nowrap; }
+  /* 承諾が必要な設定だけで届くイベントの種類: 点線の経路に合わせて破線の枠にする */
+  .chip.dash { background: #fff; color: var(--ink); border: 2px dashed var(--ink); padding: 0 8px; }
+  .state { flex-direction: column; }
+  .state small { display: block; font-family: var(--font-body); font-size: 16px; font-weight: 700; margin-top: 2px; }
+  .lbl { color: var(--ink); }
+  .lbl code { font-family: var(--font-mono); font-weight: 800; font-size: 15px; }
+  .tx { position: absolute; font-size: 16px; font-weight: 500; line-height: 23px; white-space: nowrap; }
+</style>
+</head><body>
+<div id="fig">
+  <svg id="wires"></svg>
+
+  <!-- 主な流れ -->
+  <div class="lbl" style="left:158px;top:43px"><code>StartMatchmaking</code></div>
+  <div class="state" style="left:80px;top:88px;width:140px;height:44px">QUEUED</div>
+  <div class="chip" style="left:162px;top:153px">MatchmakingSearching</div>
+  <div class="state" style="left:80px;top:196px;width:140px;height:44px">SEARCHING</div>
+  <div class="chip" style="left:162px;top:256px">PotentialMatchCreated</div>
+  <div class="chip hot" style="left:162px;top:451px">MatchmakingSucceeded</div>
+  <div class="state hot" style="left:80px;top:496px;width:140px;height:44px">COMPLETED</div>
+
+  <!-- 承諾が必要な設定だけ通る状態 -->
+  <div class="chip dash" id="am" style="top:306px">AcceptMatch</div>
+  <div class="state dim" style="left:440px;top:308px;width:224px;height:64px">REQUIRES_ACCEPTANCE<small>承諾が必要な設定だけ</small></div>
+  <div class="chip dash" style="left:240px;top:390px">AcceptMatchCompleted</div>
+
+  <!-- 失敗への分かれ道 -->
+  <div class="lbl" style="left:158px;top:607px">タイムアウト</div>
+  <div class="lbl" style="left:408px;top:607px"><code>StopMatchmaking</code></div>
+  <div class="lbl" style="left:656px;top:607px">処理の失敗</div>
+  <div class="state" style="left:70px;top:652px;width:160px;height:44px">TIMED_OUT</div>
+  <div class="state" style="left:320px;top:652px;width:160px;height:44px">CANCELLED</div>
+  <div class="state" style="left:568px;top:652px;width:160px;height:44px">FAILED</div>
+  <div class="chip" id="c1" style="top:712px">MatchmakingTimedOut</div>
+  <div class="chip" id="c2" style="top:712px">MatchmakingCancelled</div>
+  <div class="chip" id="c3" style="top:712px">MatchmakingFailed</div>
+
+  <div class="tx" style="left:24px;top:762px">状態の名前は API の仕様、イベントの種類の名前は公式サンプルのコードによる。<br>状態とイベントの種類の対応は、公式サンプルのコードをもとに筆者が整理した。</div>
+</div>
+<script>
+// 線を引く（wires.js と同じ太さ・色・矢印）。点は [x, y] の配列
+function seg(pts, o = {}) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  p.setAttribute('points', pts.map((q) => q.join(',')).join(' '));
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', o.hot ? '#ff4d00' : (o.dim ? '#8a877f' : '#0c0c0c')); p.setAttribute('stroke-width', '2.5');
+  if (o.dash) p.setAttribute('stroke-dasharray', '6 5');
+  if (o.arrow !== false) p.setAttribute('marker-end', o.hot ? 'url(#ah)' : 'url(#ak)');
+  document.getElementById('wires').appendChild(p);
+}
+window.addEventListener('load', async () => { await document.fonts.ready;
+  // 下の段の札を、各列の中心（x=150・400・648）にそろえる
+  [['c1', 150], ['c2', 400], ['c3', 648]].forEach(([id, cx]) => { const el = document.getElementById(id); el.style.left = (cx - el.offsetWidth / 2) + 'px'; });
+  seg([[150, 24], [150, 84]]);                                   // 入口: StartMatchmaking
+  seg([[150, 132], [150, 192]]);                                 // QUEUED → SEARCHING
+  // AcceptMatch の札を、J1 からの点線の上に置く。右端は矢印の先 x=436 から 16 離す
+  const am = document.getElementById('am'); am.style.left = (436 - 16 - am.offsetWidth) + 'px';
+  seg([[150, 240], [150, 428]], {arrow: false});                // SEARCHING → J2
+  seg([[150, 428], [150, 492]], {hot: true});                    // J2 → COMPLETED
+  seg([[150, 340], [436, 340]], {dash: true});                   // J1 → REQUIRES_ACCEPTANCE
+  seg([[664, 340], [712, 340], [712, 428], [154, 428]], {dash: true}); // REQUIRES_ACCEPTANCE → J2
+  seg([[80, 218], [48, 218], [48, 588], [648, 588]], {arrow: false});  // 失敗への分かれ道
+  seg([[150, 588], [150, 648]]);                                 // → TIMED_OUT
+  seg([[400, 588], [400, 648]]);                                 // → CANCELLED
+  seg([[648, 588], [648, 648]]);                                 // → FAILED
+  document.body.dataset.ready = '1';
+});
+</script>
+</body></html>

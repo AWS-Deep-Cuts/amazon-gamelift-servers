@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<!-- MatchmakingSucceeded のイベントの読み方（記事の「結果を受け取るイベント」、README 手順 5-4）。DESIGN 6-5。
+     左に番号の列、中央にイベントのカード、右に線でつながない短い説明の列。下に PotentialMatchCreated のイベントの一部のカードと説明。
+     番号 1〜7 は、記事の箇条書きの ①〜⑦ と、README 手順 5-4 の「図の ⑥」「図の ⑦」に対応する。
+     根拠:
+     - source aws.gamelift、detail-type GameLift Matchmaking Event（公式サンプル amazon-gamelift-testing-toolkit の EventBridge のルール。gl-088。hands-on/event-pattern.json）
+     - detail の type・matchId・customEventData・tickets・gameSessionInfo.players[].team（同サンプルの FlexMatchEvent.cs の型定義。gl-090、gl-091）
+     - customEventData はマッチメイキング設定の CustomEventData の値で、その設定のすべてのイベントに付く（botocore gamelift 2015-10-01 CreateMatchmakingConfiguration。gl-059）
+     - PotentialMatchCreated の detail.ruleEvaluationMetrics の ruleName・passedCount・failedCount（FlexMatchEvent.cs。gl-092）
+     - チケットの ID の形 r1-<時刻>-member-01 は hands-on/apply-round.sh。customEventData の値 aws-deepcuts-study-teams は README 手順 3-4
+     - teams.py は detail.gameSessionInfo.players[].team を読む（hands-on/teams.py の teams_from_event）
+     値は説明用の例。スタンドアロンモードの実物の形は未確認（記事の 要確認 C6）。
+     横幅の内訳（x は #fig の左端から）:
+     - 上の段: 余白 24 ＋ 番号の列 48（番号の丸 22px は 24〜46）＋ カード 498（72〜570。最長の行 52 文字 × 9 ＋ 30）＋ 24 ＋ 説明の列 182（594〜776）＋ 余白 24 ＝ 800
+     - 下の段: 余白 24 ＋ 番号の列 48 ＋ カード 444（72〜516。最長の行 46 文字 × 9 ＋ 30）＋ 24 ＋ 説明 236（540〜776）＋ 余白 24 ＝ 800
+     カードの行の高さは 28px（番号の丸 22px を連続する行に置いても重ならない）。
+     縦の内訳: 上のカード 24〜約 590、24 空けて下のカード、24 空けて注記（2 行）、下の余白 24。説明は対応する行の高さに置き、重なる場合は 16px ずつ空けて下へずらす。
+     強調: 6 -->
+<link rel="stylesheet" href="diagram.css">
+<link rel="stylesheet" href="deepcuts.css">
+<script src="wires.js"></script>
+<style>
+  #fig { width: 800px; height: 785px; }
+  .card { left: 72px; }
+  /* 番号の丸を連続する行に置くため、行の高さを 28px にする */
+  .card > pre { line-height: 28px; }
+  .card > pre strong { font-weight: 800; }
+  .nb { position: absolute; left: 24px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 15px; }
+  .nb.hot { background: var(--hot); }
+  i.nb { font-style: normal; }
+  .co { position: absolute; display: grid; grid-template-columns: 22px 1fr; align-items: start; column-gap: 8px; }
+  .co > .nb { position: static; }
+  .co > span { font-size: 16px; font-weight: 500; line-height: 22px; white-space: nowrap; }
+  .co > span code { font-family: var(--font-mono); font-weight: 800; font-size: 15px; }
+  .co.hot > span { color: var(--hot); font-weight: 900; }
+  .tx { position: absolute; left: 24px; font-size: 16px; font-weight: 500; line-height: 23px; white-space: nowrap; }
+</style>
+</head><body>
+<div id="fig">
+  <svg id="wires"></svg>
+  <div class="card" id="cardA" style="top:24px;width:498px">
+    <div class="h">MatchmakingSucceeded のイベント</div>
+<pre>{
+  <span id="k1"><strong>"source"</strong>: "aws.gamelift",
+  <strong>"detail-type"</strong>: "GameLift Matchmaking Event",</span>
+  "detail": {
+    <span id="k2"><strong>"type"</strong>: "MatchmakingSucceeded",</span>
+    <span id="k3"><strong>"matchId"</strong>: "<i>…</i>",</span>
+    <span id="k4"><strong>"customEventData"</strong>: "aws-deepcuts-study-teams",</span>
+    <span id="k5"><strong>"tickets"</strong>: [
+      { "ticketId": "r1-102030-member-01",
+        "players": [ <i>…</i> ] },
+      <i>…</i> ],</span>
+    <span id="k6"><b>"gameSessionInfo"</b>: {
+      "players": [
+        { "playerId": "member-01", <b>"team": "red"</b> },
+        { "playerId": "member-02", <b>"team": "blue"</b> },
+        <i>…</i> ] }</span>
+  }
+}</pre>
+  </div>
+
+  <div class="card" id="cardB" style="width:444px">
+    <div class="h">PotentialMatchCreated のイベントの一部</div>
+<pre><span id="k7"><strong>"ruleEvaluationMetrics"</strong>: [
+  { "ruleName": "FairYears",
+    "passedCount": <i>…</i>, "failedCount": <i>…</i> },
+  { "ruleName": "SpreadInfra",
+    "passedCount": <i>…</i>, "failedCount": <i>…</i> } ]</span></pre>
+  </div>
+
+  <!-- 番号の丸（カードの左） -->
+  <div class="nb" id="n1">1</div><div class="nb" id="n2">2</div><div class="nb" id="n3">3</div><div class="nb" id="n4">4</div>
+  <div class="nb" id="n5">5</div><div class="nb hot" id="n6">6</div><div class="nb" id="n7">7</div>
+
+  <!-- 説明の列（線でつながない） -->
+  <div class="co" id="c1"><i class="nb">1</i><span>EventBridge の<br>ルールが照合する</span></div>
+  <div class="co" id="c2"><i class="nb">2</i><span>イベントの種類</span></div>
+  <div class="co" id="c3"><i class="nb">3</i><span>マッチの ID</span></div>
+  <div class="co" id="c4"><i class="nb">4</i><span>設定の<br><code>CustomEventData</code><br>の値</span></div>
+  <div class="co" id="c5"><i class="nb">5</i><span>チケットと<br>プレイヤー</span></div>
+  <div class="co hot" id="c6"><i class="nb hot">6</i><span>各プレイヤーの<br>チーム</span></div>
+  <div class="co" id="c7"><i class="nb">7</i><span>ルールごとの合格数と<br>不合格数。<br><code>PotentialMatchCreated</code><br>のイベントに入る</span></div>
+
+  <div class="tx" id="note">公式サンプル amazon-gamelift-testing-toolkit の型定義をもとにした説明用の例。<br>値は実際のイベントと異なり、一部の項目を省略している。</div>
+</div>
+<script>
+window.addEventListener('load', async () => {
+  await document.fonts.ready;
+  const F = document.getElementById('fig').getBoundingClientRect();
+  const $ = (id) => document.getElementById(id);
+  // 下のカードは上のカードの下端から 24 空ける
+  const aBottom = Math.ceil($('cardA').getBoundingClientRect().bottom - F.top);
+  $('cardB').style.top = (aBottom + 24) + 'px';
+  // 各項目の最初の行の縦の中心
+  const mid = (n) => { const q = [...$('k' + n).getClientRects()].filter((r) => r.width > 0)[0]; return Math.round(q.top + q.height / 2 - F.top); };
+  let next = 0;
+  for (const n of [1, 2, 3, 4, 5, 6, 7]) {
+    const y = mid(n);
+    $('n' + n).style.top = (y - 11) + 'px';
+    const co = $('c' + n);
+    co.style.left = (n === 7 ? 540 : 594) + 'px';
+    const top = Math.max(y - 11, n === 7 ? 0 : next);
+    co.style.top = top + 'px';
+    next = top + co.offsetHeight + 16;
+  }
+  const bBottom = Math.ceil($('cardB').getBoundingClientRect().bottom - F.top);
+  const low = Math.max(bBottom, $('c7').offsetTop + $('c7').offsetHeight);
+  $('note').style.top = (low + 24) + 'px';
+  $('fig').style.height = (low + 24 + $('note').offsetHeight + 24) + 'px';
+  document.body.dataset.ready = '1';
+});
+</script>
+</body></html>

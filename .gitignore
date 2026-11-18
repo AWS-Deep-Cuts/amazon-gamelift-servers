@@ -1,0 +1,10 @@
+resource-ids.env
+__pycache__/
+*.pyc
+.DS_Store
+
+# 図の書き出し用の依存（img/src で npm install したもの）
+node_modules
+
+# 任意の追加のラウンドで保存する結果
+hands-on/round*.txt
