@@ -802,7 +802,7 @@ def teams_from_event(event):
 表のほかの表示は、次の値から求めています。
 
 - イベントの時系列は、各イベントの `time` から求めます。
-- ルールごとの合格数と不合格数は、`PotentialMatchCreated` のイベントから読みます。このイベントが無い場合は、`MatchmakingTimedOut` のイベントから読みます。
+- ルールごとの合格数と不合格数は、`PotentialMatchCreated` のイベントから読みます。このイベントが無い場合は、`MatchmakingTimedOut` のイベントから読みます。値が 0 でないのは 1 枚のチケットのイベントだけのことがあるため、0 でない値が入っているイベントのうち、最後に届いたものを使います。
 - すべてのチケットが終わったかは、チケットごとに、終わりを表すイベントが届いたかで判定します。終わりを表すイベントは、`MatchmakingSucceeded`・`MatchmakingTimedOut`・`MatchmakingCancelled`・`MatchmakingFailed` の 4 種類です。
 
 ### 5-4. イベントの実物を確認する
