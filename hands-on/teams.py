@@ -177,6 +177,8 @@ def print_rule_metrics(events, match_ids):
 
     PotentialMatchCreated のイベントが無い場合（ラウンド 5 のように、マッチ案ができなかった場合）は、
     MatchmakingTimedOut のイベントにも ruleEvaluationMetrics が入るため、そちらから表示する。
+    実機では、0 でない値が入っていたのは 1 枚のチケットのイベントだけで、残りのイベントの値はすべて 0 だった。
+    そのため、0 でない値が入っているイベントのうち、最後に届いたものを使う。
     """
     source = "PotentialMatchCreated"
     potentials = [e for e in events if e.get("detail", {}).get("type") == source]
@@ -184,9 +186,11 @@ def print_rule_metrics(events, match_ids):
     if not chosen:
         timed_out = [e for e in events if e.get("detail", {}).get("type") == "MatchmakingTimedOut"
                      and e.get("detail", {}).get("ruleEvaluationMetrics")]
+        nonzero = [e for e in timed_out
+                   if any(m.get("passedCount") or m.get("failedCount") for m in e["detail"]["ruleEvaluationMetrics"])]
         if timed_out:
             source = "MatchmakingTimedOut"
-            chosen = timed_out[-1:]
+            chosen = (nonzero or timed_out)[-1:]
     metrics = chosen[0].get("detail", {}).get("ruleEvaluationMetrics") if chosen else None
     print(f"ルールごとの合格数と不合格数。{source} のイベントの ruleEvaluationMetrics から")
     if not metrics:
